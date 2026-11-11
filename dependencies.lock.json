@@ -3,7 +3,7 @@
   "repositories": {
     "libinfinicanvas": {
       "url": "https://github.com/gretchycat/libinfinicanvas.git",
-      "commit": "bde2ecc59a2c10481d9cadd7021fc80f1b434d8a"
+      "commit": "9e169420b46d4d0c0e8cc28af4a1fffc0585e5a5"
     },
     "libinfinicore": {
       "url": "https://github.com/gretchycat/libinfinicore.git",
