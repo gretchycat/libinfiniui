@@ -63,6 +63,11 @@ object MediaTypeDetector {
             runCatching { MediaType.valueOf(value) }.getOrNull()
         }?.let { return it }
 
+        // Classification must work without bundling the media playback implementation.
+        if (lowerMime.startsWith("video/") || ext in setOf("rm", "rmvb") || lowerMime in setOf(
+                "application/vnd.rn-realmedia", "application/vnd.rn-realmedia-vbr", "application/x-pn-realmedia"))
+            return MediaType.VIDEO
+
         // Preserve audio identity in file-manager builds that deliberately do
         // not package the audio playback module. The MIME registry is the
         // format hint source here; decoding remains InfiniMedia's job.
