@@ -79,8 +79,9 @@ object WinampSkinParser {
         }
 
         if (visColorText == null && pleditText == null && artwork.keys.none { it != "theme.json" }) return null
-        val colors = parseColors(skinName, visColorText, pleditText, artwork)
-        return ParsedSkin(skinName, colors, artwork = artwork)
+        val displayName = SkinArtwork(artwork).displayName ?: skinName
+        val colors = parseColors(displayName, visColorText, pleditText, artwork)
+        return ParsedSkin(displayName, colors, artwork = artwork)
     }
 
     private fun readEntry(zis: InputStream): ByteArray {

@@ -35,6 +35,12 @@ class SkinArtworkTest {
         assertFalse(SkinArtwork.isImageEntry("pledit.txt"))
         assertEquals(emptyList<String>(),SkinArtwork(mapOf("pledit.txt" to byteArrayOf(1))).filenames("pledit.bmp"))
     }
+    @Test fun manifestDisplayNameReplacesTheArchiveFilename() {
+        val manifest = """{"name":"Infinimedia Default","images":{"main":"main.iff"}}""".toByteArray()
+        val parsed = WinampSkinParser.parseSkinFromStream(archive(mapOf("theme.json" to manifest, "main.iff" to byteArrayOf(1))).inputStream(), "old name")!!
+        assertEquals("Infinimedia Default", parsed.name)
+        assertEquals("Infinimedia Default", parsed.themeColors.name)
+    }
     @Test fun duplicateArchiveBasenamesAreRejected() {
         assertNull(WinampSkinParser.parseSkinFromStream(archive(mapOf("first/main.bmp" to byteArrayOf(1),"second/MAIN.BMP" to byteArrayOf(2))).inputStream(), "test"))
     }

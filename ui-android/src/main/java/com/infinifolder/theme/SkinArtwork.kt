@@ -6,8 +6,9 @@ import java.util.Locale
 
 /** Logical Winamp sprite names are independent of encoded image formats. */
 class SkinArtwork(private val entries: Map<String, ByteArray>) {
-    val layers: Map<String, List<String>> = entries["theme.json"]?.let { bytes ->
-        val root = JSONObject(bytes.toString(Charsets.UTF_8))
+    private val manifest = entries["theme.json"]?.let { JSONObject(it.toString(Charsets.UTF_8)) }
+    val displayName: String? = manifest?.optString("name")?.trim()?.takeIf { it.length in 1..128 }
+    val layers: Map<String, List<String>> = manifest?.let { root ->
         val images = root.optJSONObject("images") ?: throw IllegalArgumentException("theme.json needs an images object")
         require(images.length() <= IMAGE_ROLES.size)
         buildMap {

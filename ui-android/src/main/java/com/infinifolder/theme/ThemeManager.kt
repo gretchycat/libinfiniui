@@ -158,12 +158,13 @@ object ThemeManager {
     fun ensureBundledSkinLoaded(context: Context) {
         if (bundledSkinArtwork.isEmpty() || bundledSkinColors == null) {
             try {
-                loadBundledSkin(context, "skins/base-2.91.wsz")?.let {
+                val asset = defaultAudioPlayerSkin.takeIf { it.startsWith("skins/") } ?: "skins/base-2.91.wsz"
+                loadBundledSkin(context, asset)?.let {
                     bundledSkinArtwork = it.artwork
                     bundledSkinColors = it.themeColors.copy(id = AppThemeId.WINAMP_CLASSIC)
                 }
             } catch (e: Exception) {
-                android.util.Log.w("ThemeManager", "Could not load base-2.91.wsz", e)
+                android.util.Log.w("ThemeManager", "Could not load default player artwork", e)
             }
         }
     }

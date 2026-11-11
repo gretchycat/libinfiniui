@@ -46,7 +46,7 @@ the artwork, including indexed IFF cycling and Infini SVG palette metadata. A sk
 may map a role explicitly using `theme.json`:
 
 ```json
-{"images":{"main":"faceplate.iff","video":["background.png","title.svg"]}}
+{"name":"My skin","images":{"main":"faceplate.iff","video":["background.png","title.svg"]}}
 ```
 
 Layer arrays contain one to four images with identical canvas dimensions. Without
@@ -63,3 +63,5 @@ changes close old controllers and discard queued results. The common
 `ImageAnimationPlayback` scheduler lives in ui-android so skins do not depend on
 the optional image-viewer screen. Applications may set `defaultAudioPlayerSkin`
 before their first theme lookup; explicit user selections take precedence.
+
+The optional manifest name supplies the displayed skin name. The configured default also supplies fallback artwork when a saved bundled archive is no longer installed, avoiding a dependency on a particular classic skin asset.
