@@ -1,0 +1,25 @@
+{
+  "directory": "dependencies",
+  "repositories": {
+    "libinfinicanvas": {
+      "url": "https://github.com/gretchycat/libinfinicanvas.git",
+      "commit": "cf5e96686775bed66afd020145c36d4108b24cdf"
+    },
+    "libinfinicore": {
+      "url": "https://github.com/gretchycat/libinfinicore.git",
+      "commit": "476fb2479bab8ddff17d188ad83939281c416ed8"
+    },
+    "libinfiniscribe": {
+      "url": "https://github.com/gretchycat/libinfiniscribe.git",
+      "commit": "1037776e3149c0762b9633b3d76907c9d1ce26bc"
+    },
+    "libinfiniselect": {
+      "url": "https://github.com/gretchycat/libinfiniselect.git",
+      "commit": "776cdb08e8d53a5ad06786093e03a7883271c83c"
+    },
+    "libinfinistream": {
+      "url": "https://github.com/gretchycat/libinfinistream.git",
+      "commit": "893584ff4605148df9116c431c240fcb4fb72c33"
+    }
+  }
+}
