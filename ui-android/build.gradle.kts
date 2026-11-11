@@ -43,3 +43,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
+
+// This fixture is read from a declared dependency, never by searching parent checkouts.
+tasks.withType<Test>().configureEach {
+    val fontFixture = gradle.includedBuild("libinfinicanvas").projectDir
+        .resolve("canvas-android/src/main/assets/fonts/cp437.ttf")
+    inputs.file(fontFixture)
+    systemProperty("infini.fixture.cp437", fontFixture.absolutePath)
+}

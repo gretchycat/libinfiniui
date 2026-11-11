@@ -38,9 +38,7 @@ class FontViewerRoutingTest {
         }.mimeType)
     }
     @Test fun realBundledFontIsInspectedAndRoutedWithoutChangingItsBytes() {
-        val relative = "libraries/libinfinicanvas/canvas-android/src/main/assets/fonts/cp437.ttf"
-        val font = generateSequence(File(".").absoluteFile) { it.parentFile }
-            .map { File(it, relative) }.firstOrNull { it.isFile }
+        val font = System.getProperty("infini.fixture.cp437")?.let(::File)?.takeIf { it.isFile }
         assertNotNull("Required bundled font fixture is missing", font)
         val file = checkNotNull(font); val before = file.readBytes()
         val doc = FontDocuments.inspect(file)
