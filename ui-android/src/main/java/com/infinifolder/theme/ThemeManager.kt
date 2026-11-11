@@ -71,14 +71,31 @@ object ThemeManager {
     var activeAudioPlayerTheme: ThemeColors? = null
         private set
     private var audioArtwork: Map<String, ByteArray> = emptyMap()
-    private val skinBitmaps = mutableMapOf<String, android.graphics.Bitmap>()
+    /** Applications configure their own default; saved explicit selections retain precedence. */
+    var defaultAudioPlayerSkin: String = AppThemeId.WINAMP_CLASSIC.name
+    private val animationHosts = mutableSetOf<() -> Unit>()
+    private val skinImages by lazy { SkinImageCache(sources = { name ->
+        SkinArtwork(audioArtwork).images(name).ifEmpty { SkinArtwork(bundledSkinArtwork).images(name) }
+    }, changed = {
+        clearDerivedSkinBitmaps()
+        animationHosts.toList().forEach { it() }
+    }) }
+    fun registerSkinAnimationHost(changed: () -> Unit): java.io.Closeable {
+        val listener = { changed() }
+        animationHosts.add(listener); skinImages.setPlaying(true)
+        return java.io.Closeable { animationHosts.remove(listener); if (animationHosts.isEmpty()) skinImages.setPlaying(false) }
+    }
     private var cachedPlaylistTitlebar: android.graphics.Bitmap? = null
     private var cachedPlaylistBottomBar: android.graphics.Bitmap? = null
     private var cachedPlaylistLeftTile: android.graphics.Bitmap? = null
     private var cachedPlaylistRightTile: android.graphics.Bitmap? = null
 
     fun clearSkinBitmaps() {
-        skinBitmaps.clear()
+        skinImages.clear()
+        clearDerivedSkinBitmaps()
+    }
+
+    private fun clearDerivedSkinBitmaps() {
         cachedPlaylistTitlebar = null
         cachedPlaylistBottomBar = null
         cachedPlaylistLeftTile = null
@@ -167,7 +184,7 @@ object ThemeManager {
     fun getAudioPlayerTheme(context: Context): ThemeColors {
         activeAudioPlayerTheme?.let { return it }
         val shared = context.getSharedPreferences("browser", Context.MODE_PRIVATE)
-        val savedThemeId = shared.getString(PREF_AUDIO_PLAYER_THEME, AppThemeId.WINAMP_CLASSIC.name)
+        val savedThemeId = shared.getString(PREF_AUDIO_PLAYER_THEME, defaultAudioPlayerSkin)
         ensureBundledSkinLoaded(context)
         val resolved = when (savedThemeId) {
             AppThemeId.WINAMP_CLASSIC.name -> {
@@ -347,13 +364,7 @@ object ThemeManager {
     }
 
     fun skinBitmap(name: String): android.graphics.Bitmap? {
-        val lower = name.lowercase(Locale.ROOT)
-        skinBitmaps[lower]?.let { return it }
-        val bytes = audioArtwork[lower] ?: bundledSkinArtwork[lower] ?: return null
-        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth.toLong() * bounds.outHeight > 2_000_000) return null
-        return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.also { skinBitmaps[lower] = it }
+        return skinImages.bitmap(name)
     }
 
     fun getSkinSprite(name: String, src: android.graphics.Rect): android.graphics.Bitmap? {
@@ -474,10 +485,7 @@ object ThemeManager {
 
     private fun interfaceBitmap(name: String): android.graphics.Bitmap? {
         val bytes = skinArtwork[name] ?: return null
-        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth.toLong() * bounds.outHeight > 2_000_000) return null
-        return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        return runCatching { com.infinifolder.preview.CanvasStreams.decodeBytes(bytes, name)?.bitmap }.getOrNull()
     }
 
     fun createToolbarDrawable(theme: ThemeColors, density: Float, isDark: Boolean = theme.isDark): android.graphics.drawable.Drawable {

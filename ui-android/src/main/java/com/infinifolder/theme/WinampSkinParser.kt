@@ -2,7 +2,6 @@ package com.infinifolder.theme
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.BitmapFactory
 import java.util.Locale
 import android.net.Uri
 import com.infinifolder.viewer.MediaSourceAdapter
@@ -43,7 +42,8 @@ object WinampSkinParser {
     fun parseSkinFromStream(inputStream: InputStream, skinName: String): ParsedSkin? {
         var visColorText: String? = null
         var pleditText: String? = null
-        val artwork = mutableMapOf<String, ByteArray>()
+        val candidates = linkedMapOf<String, ByteArray>()
+        var artwork: Map<String, ByteArray> = emptyMap()
         var entryCount = 0
         var expandedBytes = 0
 
@@ -61,24 +61,24 @@ object WinampSkinParser {
                 while (entry != null) {
                     if (++entryCount > 512) return null
                     val entryName = entry.name.replace('\\', '/').substringAfterLast('/').lowercase(Locale.ROOT)
-                    if (!entry.isDirectory && entryName in SUPPORTED_ENTRIES) {
+                    if (!entry.isDirectory) {
                         val bytes = readEntry(zis)
                         expandedBytes += bytes.size
-                        if (expandedBytes > 24 * 1024 * 1024) return null
-                        when (entryName) {
-                            "viscolor.txt" -> visColorText = String(bytes, StandardCharsets.ISO_8859_1)
-                            "pledit.txt" -> pleditText = String(bytes, StandardCharsets.ISO_8859_1)
-                            else -> artwork[entryName] = bytes
-                        }
+                        if (expandedBytes > 24 * 1024 * 1024 || candidates.containsKey(entryName)) return null
+                        candidates[entryName] = bytes
                     }
                     entry = zis.nextEntry
                 }
             }
+            val selection = SkinArtwork(candidates)
+            artwork = candidates.filterKeys { SkinArtwork.isImageEntry(it) || it in selection.referencedFiles || it == "theme.json" }
+            visColorText = candidates["viscolor.txt"]?.toString(StandardCharsets.ISO_8859_1)
+            pleditText = candidates["pledit.txt"]?.toString(StandardCharsets.ISO_8859_1)
         } catch (_: Exception) {
             return null
         }
 
-        if (visColorText == null && pleditText == null && artwork.isEmpty()) return null
+        if (visColorText == null && pleditText == null && artwork.keys.none { it != "theme.json" }) return null
         val colors = parseColors(skinName, visColorText, pleditText, artwork)
         return ParsedSkin(skinName, colors, artwork = artwork)
     }
@@ -139,9 +139,9 @@ object WinampSkinParser {
 
         val spectrumArray = if (spectrum.size >= 8) spectrum.toIntArray() else ThemeColors.WINAMP_CLASSIC.spectrumColors
 
-        val toolbar = artwork["main.bmp"]?.let { bitmapColor(it, true) } ?: lightenOrDarken(bg, 1.25f)
-        val surface = artwork["gen.bmp"]?.let { bitmapColor(it) } ?: lightenOrDarken(bg, 1.2f)
-        val button = artwork["cbuttons.bmp"]?.let { bitmapColor(it) } ?: surface
+        val toolbar = SkinArtwork(artwork).images("main").firstOrNull()?.second?.let { bitmapColor(it, true) } ?: lightenOrDarken(bg, 1.25f)
+        val surface = SkinArtwork(artwork).images("gen").firstOrNull()?.second?.let { bitmapColor(it) } ?: lightenOrDarken(bg, 1.2f)
+        val button = SkinArtwork(artwork).images("cbuttons").firstOrNull()?.second?.let { bitmapColor(it) } ?: surface
         val accent = selectedBackground ?: textSecondary
         return ThemeColors(
             id = AppThemeId.CUSTOM_WSZ,
@@ -186,10 +186,8 @@ object WinampSkinParser {
     }
 
     private fun bitmapColor(bytes: ByteArray, titleStrip: Boolean = false): Int? {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || bounds.outWidth.toLong() * bounds.outHeight > 2_000_000) return null
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        val bitmap = try { com.infinifolder.preview.CanvasStreams.decodeBytes(bytes, "skin.image", 256)?.bitmap } catch (_: Exception) { null } ?: return null
+        if (bitmap.width.toLong() * bitmap.height > 2_000_000) { bitmap.recycle(); return null }
         return try {
             val colors = mutableMapOf<Int, Int>()
             val height = if (titleStrip) minOf(bitmap.height, 14) else bitmap.height

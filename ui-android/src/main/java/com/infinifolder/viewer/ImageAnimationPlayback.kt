@@ -11,10 +11,11 @@ import java.io.Closeable
 import java.util.concurrent.Executors
 
 /** One reusable frame buffer, one render in flight, and no storage access after decoding. */
-internal class ImageAnimationPlayback(private val animation:BitmapAnimation,private val bitmap:Bitmap,
-    initialElapsedNanos:Long=0,private val changed:()->Unit,private val failed:(Exception)->Unit):Closeable {
+class ImageAnimationPlayback(private val animation:BitmapAnimation,private val bitmap:Bitmap,
+    initialElapsedNanos:Long=0,private val changed:()->Unit,private val failed:(Exception)->Unit, executor:java.util.concurrent.ExecutorService?=null):Closeable {
     private val main=Handler(Looper.getMainLooper())
-    private val worker=Executors.newSingleThreadExecutor{Thread(it,"image-animation")}
+    private val ownsWorker = executor == null
+    private val worker=executor ?: Executors.newSingleThreadExecutor{Thread(it,"image-animation")}
     private val pixels=IntArray(animation.width*animation.height)
     private var accumulated=initialElapsedNanos.coerceAtLeast(0)
     private var started=0L
@@ -108,6 +109,6 @@ internal class ImageAnimationPlayback(private val animation:BitmapAnimation,priv
     }
     override fun close(){
         if(closed)return
-        pause(cancelPending=true);closed=true;pendingInputs.clear();main.removeCallbacksAndMessages(null);worker.shutdownNow()
+        pause(cancelPending=true);closed=true;pendingInputs.clear();main.removeCallbacksAndMessages(null);if(ownsWorker)worker.shutdownNow()
     }
 }

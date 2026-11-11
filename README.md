@@ -38,3 +38,28 @@ must be preserved when distributing applications.
 The optional ui-image module owns the shared image viewer used by Infinifolder and Infiniscribe. ui-android owns the common UI, source adapter and external-edit handoff. Advanced storage is an injected host capability, not a build dependency.
 
 The parser is tested with synthetic archive fixtures here. The four original Winamp archives and their real-asset regression test belong to Infinimedia; tests never search parent or sibling applications for fixtures.
+
+## Skin image formats and animation
+
+Logical Winamp sprite roles are independent of their encoded format. Canvas decodes
+the artwork, including indexed IFF cycling and Infini SVG palette metadata. A skin
+may map a role explicitly using `theme.json`:
+
+```json
+{"images":{"main":"faceplate.iff","video":["background.png","title.svg"]}}
+```
+
+Layer arrays contain one to four images with identical canvas dimensions. Without
+a mapping, `role.bmp` is preferred, then another matching role filename in stable
+order. Import limits are 512 entries, 8 MiB per entry and 24 MiB total expanded
+archive data. Decoded skin images are bounded to 2 million pixels each and an
+8 million pixel cache budget including composite/layer buffers. Invalid mappings
+are rejected; unavailable codecs retain the existing visual fallback.
+
+Hosts register `ThemeManager.registerSkinAnimationHost { invalidateArtwork() }`
+while visible, and close the returned handle when paused or destroyed. One shared
+worker renders skin animations; the last host closing pauses rendering. Theme
+changes close old controllers and discard queued results. The common
+`ImageAnimationPlayback` scheduler lives in ui-android so skins do not depend on
+the optional image-viewer screen. Applications may set `defaultAudioPlayerSkin`
+before their first theme lookup; explicit user selections take precedence.
