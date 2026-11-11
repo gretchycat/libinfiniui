@@ -102,25 +102,6 @@ class ThemeManagerTest {
     }
 
     @Test
-    fun testBaseWinampSkinParsing() {
-        val file = java.io.File("Winamp/base-2.91.wsz").takeIf { it.exists() }
-            ?: java.io.File("../Winamp/base-2.91.wsz").takeIf { it.exists() }
-            ?: java.io.File("../../Winamp/base-2.91.wsz").takeIf { it.exists() }
-        if (file != null) {
-            val parsed = file.inputStream().use {
-                WinampSkinParser.parseSkinFromStream(it, "Winamp Classic")
-            }
-            assertNotNull(parsed)
-            assertEquals("Winamp Classic", parsed?.name)
-            assertTrue(parsed?.artwork?.containsKey("cbuttons.bmp") == true)
-            assertTrue(parsed?.artwork?.containsKey("main.bmp") == true)
-            assertTrue(parsed?.artwork?.containsKey("titlebar.bmp") == true)
-            assertTrue(parsed?.artwork?.containsKey("posbar.bmp") == true)
-            assertTrue(parsed?.artwork?.containsKey("shufrep.bmp") == true)
-            assertTrue(parsed?.artwork?.containsKey("numbers.bmp") == true)
-        }
-    }
-    @Test
     fun testXmmsTarArchivesAndNestedSkinFiles() {
         val tar = ByteArrayOutputStream()
         org.apache.commons.compress.archivers.tar.TarArchiveOutputStream(tar).use { out ->

@@ -36,3 +36,5 @@ must be preserved when distributing applications.
 ## Separation audit update
 
 The optional ui-image module owns the shared image viewer used by Infinifolder and Infiniscribe. ui-android owns the common UI, source adapter and external-edit handoff. Advanced storage is an injected host capability, not a build dependency.
+
+The parser is tested with synthetic archive fixtures here. The four original Winamp archives and their real-asset regression test belong to Infinimedia; tests never search parent or sibling applications for fixtures.
