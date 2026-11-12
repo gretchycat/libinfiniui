@@ -19,6 +19,10 @@ class MediaTypeDetectorTest {
         assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("nextgen.jxl", null))
         assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("raw.dng", null))
         assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("apple.heic", null))
+        assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("artwork.xcf", null))
+        assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("artwork.xcf", "image/x-xcf"))
+        assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("pixmap.xpm", "text/plain"))
+        assertEquals(MediaType.IMAGE, MediaTypeDetector.detect("pixmap.xpm", null))
     }
 
     @Test

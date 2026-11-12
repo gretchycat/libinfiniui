@@ -57,6 +57,11 @@ object MediaTypeDetector {
             return MediaType.TEXT
         }
 
+        // XPM is a textual image format. Some content providers report it as
+        // text/plain, but its extension should still open it in the image
+        // viewer; the text action remains available explicitly from long press.
+        if (ext == "xpm") return MediaType.IMAGE
+
         val discovered=ViewerComponents.resolve(io.github.gretchycat.infinistream.CapabilityResource(
             io.github.gretchycat.infinistream.StreamMetadata(name=name,content=io.github.gretchycat.infinistream.ContentType(mimeType=safeMime))))
         discovered?.descriptor?.attributes?.get("mediaTypes")?.split(',')?.firstNotNullOfOrNull { value ->
