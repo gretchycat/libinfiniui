@@ -109,12 +109,19 @@ class ExternalAppPickerActivity : Activity() {
     private fun loadChoices(useDefault: Boolean) {
         Thread({
             try {
-                val available = choices()
+                val compatible = choices()
                 val preferredComponent = if (useDefault) defaults.candidates(target.action!!, sourceKey, target.type, fileName)
                     .firstOrNull() else null
-                // A saved app only auto-launches while it still handles this intent.
-                // Keep stale rules stored, but ask the user to choose a replacement.
-                val preferred = preferredComponent?.let { component -> available.firstOrNull { it.component == component } }
+                // Local defaults are explicit app choices. A handler may intentionally
+                // accept files by extension even when Android's MIME-filter query omits it.
+                val preferred = preferredComponent?.let { component ->
+                    compatible.firstOrNull { it.component == component }
+                        ?: if (SavedDefaultLaunchPolicy.includeExplicit(
+                                component.flattenToString(), compatible.map { it.component.flattenToString() }.toSet(),
+                                defaults.isAvailable(component))) explicitChoice(component) else null
+                }
+                val available = if (preferred != null && compatible.none { it.component == preferred.component })
+                    compatible + preferred else compatible
                 runOnUiThread {
                     if (isFinishing || isDestroyed) return@runOnUiThread
                     if (preferred != null) launch(preferred, available, rememberChoice = false)
@@ -129,6 +136,13 @@ class ExternalAppPickerActivity : Activity() {
                 runOnUiThread { if (!isFinishing && !isDestroyed) showChoices(emptyList(), "Could not list installed apps. Close this picker and try again.") }
             }
         }, "ExternalAppChoices").start()
+    }
+
+    private fun explicitChoice(component: ComponentName): Choice {
+        val activity = packageManager.getActivityInfo(component, 0)
+        val label = runCatching { activity.loadLabel(packageManager).toString() }
+            .getOrDefault(component.packageName)
+        return Choice(null, component, target.action ?: Intent.ACTION_VIEW, label)
     }
     private fun showChoices(available: List<Choice>, failure: String? = null) {
         dialog?.dismiss()
