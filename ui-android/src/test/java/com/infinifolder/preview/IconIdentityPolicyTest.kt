@@ -37,4 +37,13 @@ class IconIdentityPolicyTest {
         val docx="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         assertEquals(docx,resolver.resolve("no-extension",docx) {"application/zip"}.mimeType)
     }
+    @Test fun inconclusiveAudioProbeKeepsExtensionIdentityButExplicitFailureBecomesBinary() {
+        val registry=IconRegistry.at(temp.root);val resolver=IconIdentityResolver(registry)
+        val candidate=registry.candidates("recording.mp3").single()
+        assertEquals("audio/mpeg",candidate)
+        assertEquals(candidate,resolver.resolve("recording.mp3","application/octet-stream") {null}.mimeType)
+        assertEquals("application/octet-stream",resolver.resolve("broken.mp3",candidate) {"application/octet-stream"}.mimeType)
+        assertEquals("application/pdf",resolver.resolve("renamed.mp3",candidate) {"application/pdf"}.mimeType)
+        assertNull(AudioIconFormats.extensionCandidateAfterInconclusiveProbe(candidate,null,0L))
+    }
 }

@@ -8,6 +8,17 @@ object AudioIconFormats {
     fun isAudio(mime:String):Boolean = mime.startsWith("audio/") || mime in setOf(
         "application/vnd.smaf", "application/x-smaf", "application/x-guitar-pro", "application/x-gtp")
 
+    /**
+     * Keep an audio extension's identity when bounded content probing found no
+     * format at all. A missing signature is inconclusive for formats whose
+     * decoder lives in the separately installed media app; a concrete result
+     * (including generic binary) remains authoritative.
+     */
+    fun extensionCandidateAfterInconclusiveProbe(candidateMime:String, detectedMime:String?, length:Long? = null):String? {
+        val candidate = MimeRegistry.normalize(candidateMime)
+        return candidate.takeIf { detectedMime == null && length != 0L && isAudio(candidate) }
+    }
+
     private val extensionAssociations by lazy {
         MimeRegistry.associations().entries.associate { (extension, associatedMime) ->
             extension.removePrefix(".").lowercase(Locale.ROOT) to MimeRegistry.normalize(associatedMime)

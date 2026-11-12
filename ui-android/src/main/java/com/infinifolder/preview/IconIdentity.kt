@@ -19,6 +19,8 @@ class IconIdentityResolver(private val registry: IconRegistry) {
             null
         }
         if (candidate != null) {
+            AudioIconFormats.extensionCandidateAfterInconclusiveProbe(candidate, detected)
+                ?.let { return IconIdentity(it, true, false) }
             val validated = FileMagicDetector.validatedExtensionMime(name, candidate,
                 detected?.let { FileMagicResult(it, "") })
             return IconIdentity(validated, validated == candidate, false, detected)

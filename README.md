@@ -70,6 +70,12 @@ SVG/SVGZ artwork renders as still images; custom SVG cycling metadata is ignored
 
 When a user saves a type-wide external-app choice, extension defaults for that same MIME type are replaced. This prevents automatically seeded companion preferences from overriding the new choice. File-specific rules for other files and unrelated MIME types remain intact. These preferences apply inside the host app; Android's system defaults remain separate.
 
+Audio extension identity remains stable when bounded content probing finds no
+signature. Concrete content results still take precedence, and an explicit
+generic-binary result remains binary. This lets a host route supported audio
+formats to the separately installed Infinimedia decoder without relabeling an
+inconclusive probe as a failed parse.
+
 ## Image thumbnails and displayed navigation order
 
 Explicit Canvas thumbnail MIME aliases, including application/postscript and application/x-krita, are recognized as image presentations. Browser hosts can therefore keep their thumbnails ahead of stale generic/binary icon settings after content identity validation.
