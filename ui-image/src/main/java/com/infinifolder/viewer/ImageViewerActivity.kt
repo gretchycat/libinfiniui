@@ -85,7 +85,7 @@ class ImageViewerActivity : ViewerActivity() {
     private var hasUnsavedEdits = false
 
     // Folder navigation & presentation
-    private val folderImages = mutableListOf<ResourceEntry>()
+    private val folderImages = mutableListOf<ImageNavigationItem>()
     private var currentImageIndex = 0
     private var isRepeatEnabled = false
     private var isSlideshowPlaying = false
@@ -1052,16 +1052,22 @@ class ImageViewerActivity : ViewerActivity() {
     }
 
     private fun loadFolderImages() {
-        val parent = parentFolderUri ?: return
+        val parent = parentFolderUri
+        val initial = ImageNavigationItem(currentUri.toString(), currentName, currentMime)
         Thread {
-            val list = MediaSourceAdapter.listFolder(this, parent)
-                .filter { MediaTypeDetector.detect(it.metadata.name, it.metadata.mimeType) == MediaType.IMAGE }
+            val snapshot = ImageNavigationOrder.read(this, intent)?.takeIf { list -> list.any { it.uri == initial.uri } }
+            val images = snapshot ?: runCatching {
+                parent?.let { MediaSourceAdapter.listFolder(this, it) }.orEmpty()
+                    .filter { MediaTypeDetector.detect(it.metadata.name, it.metadata.mimeType) == MediaType.IMAGE }
+                    .sortedWith(compareBy<ResourceEntry> { it.metadata.name.lowercase(java.util.Locale.ROOT) }.thenBy { it.metadata.name })
+                    .map { ImageNavigationItem(it.uri.toString(), it.metadata.name, it.metadata.mimeType) }
+            }.getOrDefault(emptyList())
+            val list = if (images.any { it.uri == initial.uri }) images else listOf(initial) + images
             runOnUiThread {
                 if(isFinishing||isDestroyed)return@runOnUiThread
                 folderImages.clear()
                 folderImages.addAll(list)
-                val targetUriStr = currentUri?.toString()
-                currentImageIndex = folderImages.indexOfFirst { it.uri == currentUri || (targetUriStr != null && it.uri.toString() == targetUriStr) }.coerceAtLeast(0)
+                currentImageIndex = folderImages.indexOfFirst { it.uri == currentUri?.toString() }.coerceAtLeast(0)
                 updateCounter()
             }
         }.start()
@@ -1121,12 +1127,12 @@ class ImageViewerActivity : ViewerActivity() {
         if (nextIdx in folderImages.indices) {
             currentImageIndex = nextIdx
             val nextEntry = folderImages[nextIdx]
-            currentUri = nextEntry.uri
-            currentName = nextEntry.metadata.name
-            currentMime = nextEntry.metadata.mimeType
+            currentUri = Uri.parse(nextEntry.uri)
+            currentName = nextEntry.name
+            currentMime = nextEntry.mime
             titleView.text = currentName
             updateCounter()
-            loadImage(nextEntry.uri)
+            loadImage(Uri.parse(nextEntry.uri))
         } else if (delta > 0 && automatic && isSlideshowPlaying) {
             stopSlideshow()
             finish()

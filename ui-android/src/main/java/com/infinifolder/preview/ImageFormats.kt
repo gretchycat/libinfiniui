@@ -23,9 +23,19 @@ object ImageFormats {
     fun hasDosTextPreview(metadata: ResourceMetadata): Boolean = !metadata.isDirectory &&
         (extension(metadata.name) in setOf("ans","ansi","asc","diz","nfo") || metadata.mimeType in setOf("image/x-ansi","text/x-ansi","text/x-diz","text/x-nfo","text/x-ascii-art"))
 
+    /** Explicit decoder MIME aliases include authoring formats outside the image MIME family. */
+    fun isRenderableMime(mime: String): Boolean {
+        val normalized = com.infinifolder.mime.MimeRegistry.normalize(mime)
+        return normalized.startsWith("image/") || normalized in animationMimeTypes ||
+            CanvasCapabilities.registry.descriptors().any { descriptor ->
+                io.github.gretchycat.infinistream.Operations.THUMBNAIL in descriptor.operations &&
+                    descriptor.formats.any { normalized in it.mimeTypes }
+            }
+    }
+
     fun isImage(metadata: ResourceMetadata): Boolean =
         !metadata.isDirectory &&
-            (metadata.mimeType.lowercase().startsWith("image/") ||
+            (isRenderableMime(metadata.mimeType) ||
                 com.infinifolder.mime.MimeRegistry.normalize(metadata.mimeType) in animationMimeTypes ||
                 extension(metadata.name) in decodableExtensions)
 }

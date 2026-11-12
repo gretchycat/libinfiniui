@@ -6,6 +6,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ImageFormatsTest {
+    @org.junit.Test fun authoringApplicationMimesRemainThumbnailCapable() {
+        org.junit.Assert.assertTrue(ImageFormats.isRenderableMime("application/postscript"))
+        org.junit.Assert.assertTrue(ImageFormats.isRenderableMime("application/x-krita"))
+        org.junit.Assert.assertFalse(ImageFormats.isRenderableMime("application/zip"))
+        org.junit.Assert.assertFalse(ImageFormats.isRenderableMime("application/gzip"))
+        org.junit.Assert.assertFalse(ImageFormats.isRenderableMime("application/octet-stream"))
+    }
+
     private fun file(name: String, mime: String) = ResourceMetadata(name, mime, 1L, 0L, false)
 
     @Test fun imageMimeTypesArePreviewable() {

@@ -69,3 +69,9 @@ The optional manifest name supplies the displayed skin name. The configured defa
 SVG/SVGZ artwork renders as still images; custom SVG cycling metadata is ignored. IFF and other supported image animations retain lifecycle-aware playback. The shared scheduler includes rendering/publication time in its 33 ms frame deadline. Palette extraction uses a still-only decode that preserves the original first-frame pixels.
 
 When a user saves a type-wide external-app choice, extension defaults for that same MIME type are replaced. This prevents automatically seeded companion preferences from overriding the new choice. File-specific rules for other files and unrelated MIME types remain intact. These preferences apply inside the host app; Android's system defaults remain separate.
+
+## Image thumbnails and displayed navigation order
+
+Explicit Canvas thumbnail MIME aliases, including application/postscript and application/x-krita, are recognized as image presentations. Browser hosts can therefore keep their thumbnails ahead of stale generic/binary icon settings after content identity validation.
+
+ImageNavigationOrder records a browser's already sorted/filtered image rows in an app-private cache snapshot. Only an opaque token is passed to the local image Activity, including Open with's internal-image route. The viewer reads that exact order for next/previous/slideshow; it does not relist or resort a valid snapshot. Snapshots are capped at 8 MiB/100,000 rows and 32 files, preserve opaque URIs and survive Activity recreation. Missing/corrupt snapshots fall back to a stable name-sorted folder list. The snapshot grants no additional URI permissions and is not a cross-application queue protocol.
