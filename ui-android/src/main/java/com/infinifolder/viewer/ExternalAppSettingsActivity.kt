@@ -38,7 +38,7 @@ class ExternalAppSettingsActivity : Activity() {
             setOnClickListener { click() }
         }) }
         text("Default viewers and apps", 22f)
-        text("These defaults apply only inside InfiniFolder. Supported files use the built-in viewer unless you save another choice. Open with… lists the built-in viewer first and lets you change the default. File-specific choices take priority over extension and file-type choices.")
+        text("These defaults apply only inside this app. Use Open with… and Remember in InfiniFolder to change a choice. File-specific choices take priority. Saving All files of this type replaces older extension choices for that same file type. Android system defaults are separate.")
         text("Default editor: ${defaults.editor?.let(::label) ?: "Ask each time"}", 16f)
         button("Choose default editor…") {
             val target = Intent(Intent.ACTION_EDIT).setDataAndType(Uri.parse("content://$packageName.external-edit/"), "*/*")

@@ -42,7 +42,7 @@ The parser is tested with synthetic archive fixtures here. The four original Win
 ## Skin image formats and animation
 
 Logical Winamp sprite roles are independent of their encoded format. Canvas decodes
-the artwork, including indexed IFF cycling and Infini SVG palette metadata. A skin
+the artwork, including indexed IFF cycling and static SVG/SVGZ. A skin
 may map a role explicitly using `theme.json`:
 
 ```json
@@ -66,4 +66,6 @@ before their first theme lookup; explicit user selections take precedence.
 
 The optional manifest name supplies the displayed skin name. The configured default also supplies fallback artwork when a saved bundled archive is no longer installed, avoiding a dependency on a particular classic skin asset.
 
-SVG palette playback uses cached Canvas raster bindings for flat indexed paints. The shared scheduler counts rendering/publication time toward the advertised frame interval instead of waiting an extra interval afterward. Palette extraction requests a still-only decode, avoiding animation setup during theme color sampling. Animated gradient stops retain Canvas’s vector fallback.
+SVG/SVGZ artwork renders as still images; custom SVG cycling metadata is ignored. IFF and other supported image animations retain lifecycle-aware playback. The shared scheduler includes rendering/publication time in its 33 ms frame deadline. Palette extraction uses a still-only decode that preserves the original first-frame pixels.
+
+When a user saves a type-wide external-app choice, extension defaults for that same MIME type are replaced. This prevents automatically seeded companion preferences from overriding the new choice. File-specific rules for other files and unrelated MIME types remain intact. These preferences apply inside the host app; Android's system defaults remain separate.

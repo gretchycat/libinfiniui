@@ -43,8 +43,7 @@ class ExternalAppDefaults(context: Context) {
         }
         synchronized(lock) {
             write(rules().filterNot { it.action == action &&
-                ((it.scope == scope && it.key == key) ||
-                    (scope != FILE && it.scope == FILE && it.key == sourceKey)) } +
+                ExternalDefaultRulePolicy.replaces(scope, key, normalized, sourceKey, it.scope, it.key, it.mime) } +
                 Rule(action, scope, key, normalized, name, component))
         }
     }

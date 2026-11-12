@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import com.infinifolder.preview.FramePacedBitmapAnimation
 import com.infinifolder.preview.BitmapAnimation
 import com.infinifolder.preview.InteractiveBitmapAnimation
 import com.infinifolder.preview.ImagePointerKind
@@ -79,7 +78,7 @@ class ImageAnimationPlayback(private val animation:BitmapAnimation,private val b
         if(closed||(!playing&&!pausedFrame)||inFlight)return
         inFlight=true
         val frameStarted = SystemClock.uptimeMillis()
-        val frameInterval = (animation as? FramePacedBitmapAnimation)?.frameIntervalMillis?.coerceIn(16, 1000) ?: 33L
+        val frameInterval = 33L
         val request=generation;val elapsed=elapsedNanos.let{if(durationNanos>0)it%durationNanos else it};val force=forceNext
         val inputs=pendingInputs.toList();pendingInputs.clear()
         forceNext=false
