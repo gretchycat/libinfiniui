@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import com.infinifolder.preview.FramePacedBitmapAnimation
 import com.infinifolder.preview.BitmapAnimation
 import com.infinifolder.preview.InteractiveBitmapAnimation
 import com.infinifolder.preview.ImagePointerKind
@@ -77,6 +78,8 @@ class ImageAnimationPlayback(private val animation:BitmapAnimation,private val b
     private fun render(pausedFrame:Boolean=false){
         if(closed||(!playing&&!pausedFrame)||inFlight)return
         inFlight=true
+        val frameStarted = SystemClock.uptimeMillis()
+        val frameInterval = (animation as? FramePacedBitmapAnimation)?.frameIntervalMillis?.coerceIn(16, 1000) ?: 33L
         val request=generation;val elapsed=elapsedNanos.let{if(durationNanos>0)it%durationNanos else it};val force=forceNext
         val inputs=pendingInputs.toList();pendingInputs.clear()
         forceNext=false
@@ -103,7 +106,7 @@ class ImageAnimationPlayback(private val animation:BitmapAnimation,private val b
                 }
                 if(repaintPending){repaintPending=false;render(true)}
                 else if(request==generation && pausedFrame && !playing && animation.needsMoreRendering)main.postDelayed(pausedTick,1)
-                else if(playing && (animation.needsContinuousFrames || animation.needsMoreRendering))main.postDelayed(tick,33)
+                else if(playing && (animation.needsContinuousFrames || animation.needsMoreRendering))main.postDelayed(tick, (frameInterval - (SystemClock.uptimeMillis() - frameStarted)).coerceAtLeast(1))
             }
         }
     }

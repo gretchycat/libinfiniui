@@ -187,7 +187,7 @@ object WinampSkinParser {
     }
 
     private fun bitmapColor(bytes: ByteArray, titleStrip: Boolean = false): Int? {
-        val bitmap = try { com.infinifolder.preview.CanvasStreams.decodeBytes(bytes, "skin.image", 256)?.bitmap } catch (_: Exception) { null } ?: return null
+        val bitmap = try { com.infinifolder.preview.CanvasStreams.decodeBytes(bytes, "skin.image", 256, false)?.bitmap } catch (_: Exception) { null } ?: return null
         if (bitmap.width.toLong() * bitmap.height > 2_000_000) { bitmap.recycle(); return null }
         return try {
             val colors = mutableMapOf<Int, Int>()
