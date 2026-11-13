@@ -36,6 +36,11 @@ class IconIdentityPolicyTest {
         assertEquals("application/pdf",resolver.resolve("book.intentional","") {error("No icon magic override")}.mimeType)
         val docx="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         assertEquals(docx,resolver.resolve("no-extension",docx) {"application/zip"}.mimeType)
+        assertEquals(docx,resolver.resolve("book.docx",docx) {"application/zip"}.mimeType)
+    }
+    @Test fun declaredParserMimeAliasesPreserveTheImageExtensionIdentity() {
+        val registry=IconRegistry.at(temp.root);val resolver=IconIdentityResolver(registry)
+        assertEquals("image/x-eps",resolver.resolve("sample.eps","image/x-eps") {"application/postscript"}.mimeType)
     }
     @Test fun inconclusiveAudioProbeKeepsExtensionIdentityButExplicitFailureBecomesBinary() {
         val registry=IconRegistry.at(temp.root);val resolver=IconIdentityResolver(registry)

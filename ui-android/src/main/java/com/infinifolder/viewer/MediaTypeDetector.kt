@@ -4,6 +4,12 @@ import com.infinifolder.archive.ArchiveFormats
 import com.infinifolder.model.ResourceEntry
 import com.infinifolder.model.ResourceMetadata
 import com.infinifolder.preview.ImageFormats
+import io.github.gretchycat.infinistream.CapabilityResource
+import io.github.gretchycat.infinistream.ContentType
+import io.github.gretchycat.infinistream.HandlerDescriptor
+import io.github.gretchycat.infinistream.Operations
+import io.github.gretchycat.infinistream.RuntimeCapabilities
+import io.github.gretchycat.infinistream.StreamMetadata
 import java.util.Locale
 
 enum class MediaType {
@@ -25,6 +31,9 @@ enum class MediaType {
 
 object MediaTypeDetector {
 
+    private data class VisualRoute(val descriptor: HandlerDescriptor, val type: MediaType)
+    @Volatile private var visualRoutesCache: Pair<Long, List<VisualRoute>>? = null
+
     fun isGenericBinary(name:String,mimeType:String?):Boolean =
         com.infinifolder.mime.MimeRegistry.isUnspecified(
             com.infinifolder.mime.MimeRegistry.effective(name,mimeType).lowercase(Locale.ROOT))
@@ -43,24 +52,61 @@ object MediaTypeDetector {
 
     private val AUDIO_MIME_TYPES get() = io.github.gretchycat.infinistream.RuntimeCapabilities.library("sound").descriptors().flatMap { it.formats }.flatMap { it.mimeTypes }.toSet()
 
+    /**
+     * Build visual routing from parser declarations. A parser marked as a text
+     * source is an alternate interpretation, so it cannot take the primary
+     * image/audio/video route away from a media parser for the same format.
+     */
+    private fun visualRoutes(): List<VisualRoute> {
+        val runtime = RuntimeCapabilities.installed()
+        visualRoutesCache?.takeIf { it.first == runtime.revision }?.let { return it.second }
+        return synchronized(this) {
+            visualRoutesCache?.takeIf { it.first == runtime.revision }?.second ?: run {
+                val supportedOperations = setOf(Operations.DECODE, Operations.VIEW, Operations.PLAY)
+                val routes = runtime.registeredHandlers().flatMap { handler ->
+                    val descriptor = handler.describe()
+                    if (descriptor.operations.none { it in supportedOperations } ||
+                        !descriptor.attributes["sourceMode"].isNullOrBlank()) return@flatMap emptyList()
+                    val declared = buildSet {
+                        descriptor.attributes["presentation"]?.let { add(it) }
+                        descriptor.attributes["mediaTypes"]?.split(',')?.forEach { add(it.trim()) }
+                    }.mapNotNull { value ->
+                        runCatching { MediaType.valueOf(value.uppercase(Locale.ROOT)) }.getOrNull()
+                    }.filter { it in setOf(MediaType.IMAGE, MediaType.AUDIO, MediaType.VIDEO) }
+                    declared.map { VisualRoute(descriptor, it) }
+                }
+                visualRoutesCache = runtime.revision to routes
+                routes
+            }
+        }
+    }
+
+    /** Resolve only declared media parsers, with video/audio/image ahead of text alternatives. */
+    private fun declaredVisualType(name: String, mime: String): MediaType? {
+        val resource = CapabilityResource(StreamMetadata(name = name, content = ContentType(mimeType = mime)))
+        val rank = mapOf(MediaType.VIDEO to 0, MediaType.AUDIO to 1, MediaType.IMAGE to 2)
+        return visualRoutes().asSequence()
+            .filter { route -> route.descriptor.formats.any { it.score(resource) > 0 } }
+            .sortedWith(compareBy<VisualRoute> { rank[it.type] ?: Int.MAX_VALUE }
+                .thenByDescending { it.descriptor.priority }
+                .thenBy { it.descriptor.id })
+            .firstOrNull()?.type
+    }
+
     fun detect(name: String, mimeType: String? = null): MediaType {
         val safeMime = com.infinifolder.mime.MimeRegistry.effective(name, mimeType)
         val lowerName = name.lowercase(Locale.ROOT)
         val ext = lowerName.substringAfterLast('.', "")
         val lowerMime = safeMime.lowercase(Locale.ROOT).substringBefore(';').trim()
 
-        // DOS text art advertises an image MIME so icon generation can render
-        // it as a thumbnail. That image capability must not steal the actual
-        // open route from InfiniScribe's CP437 text viewer.
-        if (ImageFormats.hasDosTextPreview(
-                ResourceMetadata(name, safeMime, null, null, false))) {
-            return MediaType.TEXT
-        }
+        // Media parsers own the primary route when a format also has an
+        // alternate source-text or container interpretation (XPM/XCF/ANSI).
+        declaredVisualType(name, safeMime)?.let { return it }
 
-        // XPM is a textual image format. Some content providers report it as
-        // text/plain, but its extension should still open it in the image
-        // viewer; the text action remains available explicitly from long press.
-        if (ext == "xpm") return MediaType.IMAGE
+        // Keep legacy text-art classification only when no visual parser has
+        // claimed the actual format. A long-press source action remains available.
+        if (ImageFormats.hasDosTextPreview(ResourceMetadata(name, safeMime, null, null, false)))
+            return MediaType.TEXT
 
         val discovered=ViewerComponents.resolve(io.github.gretchycat.infinistream.CapabilityResource(
             io.github.gretchycat.infinistream.StreamMetadata(name=name,content=io.github.gretchycat.infinistream.ContentType(mimeType=safeMime))))
