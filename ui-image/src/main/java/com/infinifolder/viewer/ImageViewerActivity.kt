@@ -825,6 +825,8 @@ class ImageViewerActivity : ViewerActivity() {
         metadataLoadGeneration++
         metadataLoadThread?.interrupt()
         val generation = ++imageLoadGeneration
+        val decodeName = currentName
+        val decodeMime = currentMime
         imageLoadThread?.interrupt()
         imageLoadThread = Thread {
             var decodeFailure:String?=null
@@ -838,6 +840,14 @@ class ImageViewerActivity : ViewerActivity() {
                     com.infinifolder.storage.DiagnosticLog.record("viewer.image.decode-failed",error=t)
                 }
                 null
+            }
+            if (decodeName.endsWith(".ora", true) || decodeMime in setOf("image/openraster", "application/openraster")) {
+                com.infinifolder.storage.DiagnosticLog.record("viewer.image.ora.decode",
+                    "name=$decodeName mime=$decodeMime decoded=${frame != null} " +
+                        "size=${frame?.bitmap?.width ?: 0}x${frame?.bitmap?.height ?: 0} " +
+                        "route=${frame?.metadata?.provenance?.transformations?.joinToString(",") ?: "none"} " +
+                        "animation=${frame?.animation?.description ?: "none"} " +
+                        "diagnostic=${frame?.decodeDiagnostics ?: "no decoder trace"}")
             }
             val bmp = frame?.bitmap
 
