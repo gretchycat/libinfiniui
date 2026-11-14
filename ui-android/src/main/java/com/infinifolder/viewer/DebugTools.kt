@@ -182,7 +182,7 @@ object DebugTools : Application.ActivityLifecycleCallbacks {
             setImageResource(com.infinifolder.viewer.common.R.drawable.ic_debug_bug)
             imageTintList = android.content.res.ColorStateList.valueOf(
                 com.infinifolder.theme.ThemeManager.activeTheme.textPrimary)
-            contentDescription = "Offload debug information"
+            contentDescription = "Offload debug information; long-press to change the dump folder"
             tooltipText = contentDescription
             val backgroundAttr = android.util.TypedValue()
             activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, backgroundAttr, true)
@@ -190,6 +190,10 @@ object DebugTools : Application.ActivityLifecycleCallbacks {
             val padding = (8 * density).toInt()
             setPadding(padding, padding, padding, padding)
             setOnClickListener { offload(activity) }
+            setOnLongClickListener {
+                activity.startActivity(Intent(activity, DiagnosticsActivity::class.java))
+                true
+            }
         }
         toolbar.addView(button, LinearLayout.LayoutParams((36 * density).toInt(), (44 * density).toInt()))
         buttons[activity] = button
