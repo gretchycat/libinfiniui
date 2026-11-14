@@ -13,6 +13,15 @@ applications do not construct or include that graph. `MediaSourceAdapter`
 consumes Android content references from libinfiniselect and third-party sources.
 It never treats a foreign provider's opaque document ID as a local filename.
 
+## Diagnostics dump folder
+
+The debug-bug button in an app toolbar offloads the current diagnostic log when
+tapped. Long-press it to open Diagnostics, where **Choose or change debug dump
+folder** sets a writable, persistent Android document-tree destination for that
+app. The picker writes a small test log before saving the destination. Folder
+access is app-specific; if the document provider cannot grant persistent write
+access, Diagnostics reports the error and does not save that destination.
+
 The icon theme is pinned under `themes/icon-theme`. Its builder packages artwork
 once in this library's assets and generates its Kotlin registry. Apps do not
 bundle independent copies of the same theme source.
