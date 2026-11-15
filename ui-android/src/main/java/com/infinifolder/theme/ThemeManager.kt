@@ -23,6 +23,11 @@ enum class ThemeMode {
 
 object ThemeManager {
 
+    data class PlaylistScrollbarSprites(
+        val thumb: android.graphics.Bitmap,
+        val pressedThumb: android.graphics.Bitmap
+    )
+
     private const val PREF_ACTIVE_THEME = "active_system_theme"
     private const val PREF_CUSTOM_SKIN_FILE = "active_custom_skin_file"
     private const val PREF_SKIN_ASSET_PATH = "active_skin_asset_path"
@@ -89,6 +94,7 @@ object ThemeManager {
     private var cachedPlaylistBottomBar: android.graphics.Bitmap? = null
     private var cachedPlaylistLeftTile: android.graphics.Bitmap? = null
     private var cachedPlaylistRightTile: android.graphics.Bitmap? = null
+    private var cachedPlaylistScrollbarSprites: PlaylistScrollbarSprites? = null
 
     fun clearSkinBitmaps() {
         skinImages.clear()
@@ -100,6 +106,7 @@ object ThemeManager {
         cachedPlaylistBottomBar = null
         cachedPlaylistLeftTile = null
         cachedPlaylistRightTile = null
+        cachedPlaylistScrollbarSprites = null
     }
 
     const val PREF_AUDIO_PLAYER_THEME = "audio_player_theme"
@@ -578,6 +585,18 @@ object ThemeManager {
         val tile = getSkinSprite("pledit.bmp", android.graphics.Rect(26, 42, 51, 71))
         cachedPlaylistRightTile = tile
         return tile
+    }
+
+    /** PLEDIT's dedicated right-side scrollbar groove and normal/pressed thumb sprites. */
+    fun getPlaylistScrollbarSprites(): PlaylistScrollbarSprites? {
+        cachedPlaylistScrollbarSprites?.let { return it }
+        val pledit = skinBitmap("pledit.bmp") ?: return null
+        if (pledit.width < 70 || pledit.height < 71) return null
+        val thumb = getSkinSprite("pledit.bmp", android.graphics.Rect(52, 53, 60, 71)) ?: return null
+        val pressed = getSkinSprite("pledit.bmp", android.graphics.Rect(62, 53, 70, 71)) ?: return null
+        return PlaylistScrollbarSprites(thumb, pressed).also {
+            cachedPlaylistScrollbarSprites = it
+        }
     }
 
     fun createPlaylistTitlebarDrawable(theme: ThemeColors, density: Float): android.graphics.drawable.Drawable? {
