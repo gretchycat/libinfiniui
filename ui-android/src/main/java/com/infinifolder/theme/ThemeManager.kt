@@ -506,12 +506,20 @@ object ThemeManager {
 
     fun getPlaylistTitlebarBitmap(): android.graphics.Bitmap? {
         cachedPlaylistTitlebar?.let { return it }
+        // The default theme also ships this preassembled, editable source asset so
+        // the unpacked theme and packaged skin show the same centered title.
+        skinBitmap("playlist-titlebar.bmp")?.takeIf { it.width == 275 && it.height == 20 }?.let {
+            cachedPlaylistTitlebar = it
+            return it
+        }
         val pledit = skinBitmap("pledit.bmp")
         val gen = skinBitmap("gen.bmp")
         val bmp = pledit ?: gen ?: return null
 
         val isPledit = (pledit != null)
-        val yOffset = if (isPledit && bmp.height >= 41) 21 else 0
+        // Use the active PLEDIT row, matching the active GEN title bars used by
+        // the other docked windows.
+        val yOffset = 0
         val skinName = if (isPledit) "pledit.bmp" else "gen.bmp"
 
         val assembled = android.graphics.Bitmap.createBitmap(275, 20, android.graphics.Bitmap.Config.ARGB_8888)
@@ -523,18 +531,23 @@ object ThemeManager {
             c.drawBitmap(it, 0f, 0f, p)
         }
 
-        // 2. Title piece: (26, yOffset, 126, yOffset + 20) width 100
-        getSkinSprite(skinName, android.graphics.Rect(26, yOffset, 126, yOffset + 20))?.let {
-            c.drawBitmap(it, 25f, 0f, p)
-        }
-
-        // 3. Center filler: (127, yOffset, 152, yOffset + 20) width 25 repeated from x=125 to 250
+        // 2. Fill the title track first. PLEDIT's title sprite contains its own
+        // left-aligned PLAYLIST lettering, so draw that piece over the fill below
+        // with its lettering centered in the assembled 275px bar.
+        // Center filler: (127, yOffset, 152, yOffset + 20) width 25 repeated from x=25 to 250.
         getSkinSprite(skinName, android.graphics.Rect(127, yOffset, 152, yOffset + 20))?.let { fill ->
-            var curX = 125f
+            var curX = 25f
             while (curX < 250f) {
                 c.drawBitmap(fill, curX, 0f, p)
                 curX += 25f
             }
+        }
+
+        // 3. Title piece: (26, yOffset, 126, yOffset + 20) width 100.
+        // Center this 100px skin segment in the 275px window.
+        getSkinSprite(skinName, android.graphics.Rect(26, yOffset, 126, yOffset + 20))?.let {
+            val titleLeft = if (isPledit) (275f - it.width) / 2f else 25f
+            c.drawBitmap(it, titleLeft, 0f, p)
         }
 
         // 4. Right corner: (153, yOffset, 178, yOffset + 20) width 25
