@@ -16,6 +16,10 @@ class SkinArtworkTest {
             assertEquals(listOf(name), SkinArtwork(parsed.artwork).filenames("main.bmp"))
         }
     }
+    @Test fun packagedPlaylistTitlebarHasItsOwnImageRole() {
+        val artwork = mapOf("playlist-titlebar.bmp" to byteArrayOf(1))
+        assertEquals(listOf("playlist-titlebar.bmp"), SkinArtwork(artwork).filenames("playlist-titlebar.bmp"))
+    }
     @Test fun classicBmpAndArchiveOrderRemainCompatible() {
         val artwork = mapOf("main.png" to byteArrayOf(1), "main.bmp" to byteArrayOf(2))
         assertEquals(listOf("main.bmp"), SkinArtwork(artwork).filenames("main"))

@@ -41,7 +41,7 @@ class SkinArtwork(private val entries: Map<String, ByteArray>) {
     val referencedFiles: Set<String> get() = layers.values.flatten().toSet()
 
     companion object {
-        val IMAGE_ROLES = setOf("main", "gen", "cbuttons", "titlebar", "posbar", "volume", "shufrep", "text", "numbers", "monoster", "playpaus", "pledit", "balance", "eqmain", "eq_ex", "nums_ex", "video", "genex", "albumlist", "amarok", "mikro", "mb")
+        val IMAGE_ROLES = setOf("main", "gen", "cbuttons", "titlebar", "posbar", "volume", "shufrep", "text", "numbers", "monoster", "playpaus", "pledit", "playlist-titlebar", "balance", "eqmain", "eq_ex", "nums_ex", "video", "genex", "albumlist", "amarok", "mikro", "mb")
         fun normalize(name: String): String = name.replace('\\', '/').substringAfterLast('/').lowercase(Locale.ROOT)
         fun role(name: String): String = normalize(name).substringBeforeLast('.', normalize(name))
         fun isImageEntry(name: String): Boolean = normalize(name) !in setOf("pledit.txt", "albumlist.txt", "viscolor.txt", "theme.json") && role(name) in IMAGE_ROLES
