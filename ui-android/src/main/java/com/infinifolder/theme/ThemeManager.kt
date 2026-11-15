@@ -90,7 +90,6 @@ object ThemeManager {
         animationHosts.add(listener); skinImages.setPlaying(true)
         return java.io.Closeable { animationHosts.remove(listener); if (animationHosts.isEmpty()) skinImages.setPlaying(false) }
     }
-    private var cachedPlaylistTitlebar: android.graphics.Bitmap? = null
     private var cachedPlaylistBottomBar: android.graphics.Bitmap? = null
     private var cachedPlaylistLeftTile: android.graphics.Bitmap? = null
     private var cachedPlaylistRightTile: android.graphics.Bitmap? = null
@@ -102,7 +101,6 @@ object ThemeManager {
     }
 
     private fun clearDerivedSkinBitmaps() {
-        cachedPlaylistTitlebar = null
         cachedPlaylistBottomBar = null
         cachedPlaylistLeftTile = null
         cachedPlaylistRightTile = null
@@ -504,61 +502,6 @@ object ThemeManager {
         }
     }
 
-    fun getPlaylistTitlebarBitmap(): android.graphics.Bitmap? {
-        cachedPlaylistTitlebar?.let { return it }
-        // The default theme also ships this preassembled, editable source asset so
-        // the unpacked theme and packaged skin show the same centered title.
-        skinBitmap("playlist-titlebar.bmp")?.takeIf { it.width == 275 && it.height == 20 }?.let {
-            cachedPlaylistTitlebar = it
-            return it
-        }
-        val pledit = skinBitmap("pledit.bmp")
-        val gen = skinBitmap("gen.bmp")
-        val bmp = pledit ?: gen ?: return null
-
-        val isPledit = (pledit != null)
-        // Use the active PLEDIT row, matching the active GEN title bars used by
-        // the other docked windows.
-        val yOffset = 0
-        val skinName = if (isPledit) "pledit.bmp" else "gen.bmp"
-
-        val assembled = android.graphics.Bitmap.createBitmap(275, 20, android.graphics.Bitmap.Config.ARGB_8888)
-        val c = android.graphics.Canvas(assembled)
-        val p = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
-
-        // 1. Left corner: (0, yOffset, 25, yOffset + 20)
-        getSkinSprite(skinName, android.graphics.Rect(0, yOffset, 25, yOffset + 20))?.let {
-            c.drawBitmap(it, 0f, 0f, p)
-        }
-
-        // 2. Fill the title track first. PLEDIT's title sprite contains its own
-        // left-aligned PLAYLIST lettering, so draw that piece over the fill below
-        // with its lettering centered in the assembled 275px bar.
-        // Center filler: (127, yOffset, 152, yOffset + 20) width 25 repeated from x=25 to 250.
-        getSkinSprite(skinName, android.graphics.Rect(127, yOffset, 152, yOffset + 20))?.let { fill ->
-            var curX = 25f
-            while (curX < 250f) {
-                c.drawBitmap(fill, curX, 0f, p)
-                curX += 25f
-            }
-        }
-
-        // 3. Title piece: (26, yOffset, 126, yOffset + 20) width 100.
-        // Center this 100px skin segment in the 275px window.
-        getSkinSprite(skinName, android.graphics.Rect(26, yOffset, 126, yOffset + 20))?.let {
-            val titleLeft = if (isPledit) (275f - it.width) / 2f else 25f
-            c.drawBitmap(it, titleLeft, 0f, p)
-        }
-
-        // 4. Right corner: (153, yOffset, 178, yOffset + 20) width 25
-        getSkinSprite(skinName, android.graphics.Rect(153, yOffset, 178, yOffset + 20))?.let {
-            c.drawBitmap(it, 250f, 0f, p)
-        }
-
-        cachedPlaylistTitlebar = assembled
-        return assembled
-    }
-
     fun getPlaylistBottomBarBitmap(): android.graphics.Bitmap? {
         cachedPlaylistBottomBar?.let { return it }
         val pledit = skinBitmap("pledit.bmp") ?: return null
@@ -612,18 +555,4 @@ object ThemeManager {
         }
     }
 
-    fun createPlaylistTitlebarDrawable(theme: ThemeColors, density: Float): android.graphics.drawable.Drawable? {
-        val bmp = getPlaylistTitlebarBitmap()
-        if (bmp != null) {
-            return android.graphics.drawable.BitmapDrawable(null, bmp).apply {
-                isFilterBitmap = smoothSkinScaling
-            }
-        }
-        val dpStroke = (1 * density).toInt().coerceAtLeast(1)
-        return GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            setColor(theme.toolbarBackground)
-            setStroke(dpStroke, theme.toolbarBorder)
-        }
-    }
 }
