@@ -11,7 +11,9 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.PixelCopy
+import android.view.SurfaceView
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -266,18 +268,90 @@ object DebugTools : Application.ActivityLifecycleCallbacks {
             if (bitmap == null) { write(null, "unavailable"); return@post }
             runCatching {
                 PixelCopy.request(captureWindow, bitmap, { status ->
-                    if (status == PixelCopy.SUCCESS) write(bitmap, "PixelCopy") else {
+                    if (status == PixelCopy.SUCCESS) {
+                        captureSurfaceViews(view, bitmap) { captured, failed ->
+                            val method = if (captured + failed == 0) "PixelCopy window (no visible SurfaceViews)"
+                                else "PixelCopy window + SurfaceView ($captured captured, $failed unavailable)"
+                            write(bitmap, method)
+                        }
+                    } else {
                         val drawn = runCatching { view.draw(Canvas(bitmap)); bitmap }.getOrNull()
                         if (drawn == null) bitmap.recycle()
-                        write(drawn, "View.draw (PixelCopy result $status)")
+                        if (drawn == null) write(null, "View.draw failed (PixelCopy result $status)")
+                        else captureSurfaceViews(view, drawn) { captured, failed ->
+                            write(drawn, "View.draw + SurfaceView ($captured captured, $failed unavailable; PixelCopy result $status)")
+                        }
                     }
                 }, Handler(Looper.getMainLooper()))
             }.onFailure {
                 val drawn = runCatching { view.draw(Canvas(bitmap)); bitmap }.getOrNull()
                 if (drawn == null) bitmap.recycle()
-                write(drawn, "View.draw fallback")
+                if (drawn == null) write(null, "View.draw fallback failed")
+                else captureSurfaceViews(view, drawn) { captured, failed ->
+                    write(drawn, "View.draw + SurfaceView ($captured captured, $failed unavailable; window PixelCopy threw)")
+                }
             }
         }
+    }
+
+    /** PixelCopy(Window) can omit separately composed SurfaceView buffers such as GLSurfaceView.
+     * Copy each visible surface explicitly and overlay it at its window-relative position. */
+    private fun captureSurfaceViews(root: View, destination: Bitmap, complete: (Int, Int) -> Unit) {
+        val surfaces = mutableListOf<SurfaceView>()
+        fun collect(view: View) {
+            if (view.visibility != View.VISIBLE || view.alpha <= 0f || !view.isShown) return
+            if (view is SurfaceView) {
+                if (view.width > 0 && view.height > 0 && view.holder.surface.isValid) surfaces += view
+                return
+            }
+            if (view is ViewGroup) for (index in 0 until view.childCount) collect(view.getChildAt(index))
+        }
+        collect(root)
+        if (surfaces.isEmpty()) { complete(0, 0); return }
+
+        val rootLocation = IntArray(2)
+        root.getLocationInWindow(rootLocation)
+        var captured = 0
+        var failed = 0
+        var index = 0
+        val handler = Handler(Looper.getMainLooper())
+        fun next() {
+            if (index >= surfaces.size) { complete(captured, failed); return }
+            val surface = surfaces[index++]
+            val layer = runCatching {
+                Bitmap.createBitmap(surface.width, surface.height, Bitmap.Config.ARGB_8888)
+            }.getOrNull()
+            if (layer == null) { failed++; next(); return }
+            runCatching {
+                PixelCopy.request(surface, layer, { status ->
+                    if (status == PixelCopy.SUCCESS) {
+                        val location = IntArray(2)
+                        surface.getLocationInWindow(location)
+                        val left = location[0] - rootLocation[0]
+                        val top = location[1] - rootLocation[1]
+                        val target = android.graphics.Rect(left, top, left + layer.width, top + layer.height)
+                        val visible = android.graphics.Rect(0, 0, destination.width, destination.height)
+                        if (visible.intersect(target)) {
+                            val source = android.graphics.Rect(
+                                visible.left - target.left,
+                                visible.top - target.top,
+                                visible.right - target.left,
+                                visible.bottom - target.top,
+                            )
+                            Canvas(destination).drawBitmap(layer, source, visible, null)
+                            captured++
+                        } else failed++
+                    } else failed++
+                    layer.recycle()
+                    next()
+                }, handler)
+            }.onFailure {
+                failed++
+                layer.recycle()
+                next()
+            }
+        }
+        next()
     }
     override fun onActivityDestroyed(activity: Activity) { buttons.remove(activity); UiResponsivenessMonitor.stopped(activity) }
     override fun onActivityCreated(activity: Activity, state: Bundle?) {}
