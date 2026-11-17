@@ -2,23 +2,23 @@
   "directory": "dependencies",
   "repositories": {
     "libinfinicanvas": {
-      "url": "https://github.com/gretchycat/libinfinicanvas.git",
+      "url": "https://github.com/infiniforge/libinfinicanvas.git",
       "commit": "c0b6c1ec7e5c3149c0ffb983fc1ae2a15c430a1a"
     },
     "libinfinicore": {
-      "url": "https://github.com/gretchycat/libinfinicore.git",
+      "url": "https://github.com/infiniforge/libinfinicore.git",
       "commit": "0f98a0e9c94e9de0133e4e1ab53a1274b0fd33d8"
     },
     "libinfiniscribe": {
-      "url": "https://github.com/gretchycat/libinfiniscribe.git",
+      "url": "https://github.com/infiniforge/libinfiniscribe.git",
       "commit": "60dd088497e8ea518b8b966b37dbada011db6d12"
     },
     "libinfiniselect": {
-      "url": "https://github.com/gretchycat/libinfiniselect.git",
+      "url": "https://github.com/infiniforge/libinfiniselect.git",
       "commit": "74bdacf5d88fcdcaa97eb50343b0b47b31c398ed"
     },
     "libinfinistream": {
-      "url": "https://github.com/gretchycat/libinfinistream.git",
+      "url": "https://github.com/infiniforge/libinfinistream.git",
       "commit": "0dcb1b17b0450d900d0581f2fd2c13bf0dd32e4d"
     }
   }
