@@ -6,7 +6,7 @@ import org.junit.Test
 class ExternalDefaultRulePolicyTest {
     private fun replaces(scope: String, savedScope: String, savedKey: String, savedMime: String = "audio/mpeg") =
         ExternalDefaultRulePolicy.replaces(scope, if (scope == "type") "audio/mpeg" else "mp3",
-            "audio/mpeg", "current-file", savedScope, savedKey, savedMime)
+            "audio/mpeg", "current-file", "mp3", savedScope, savedKey, savedMime)
 
     @Test fun typeChoiceReplacesSeededExtensionChoice() {
         assertTrue(replaces("type", "extension", "mp3"))

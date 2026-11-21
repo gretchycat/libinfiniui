@@ -41,9 +41,12 @@ class ExternalAppDefaults(context: Context) {
             EXTENSION -> requireNotNull(extensionOf(name)) { "An extension default requires a filename extension" }
             else -> normalized
         }
+        val currentExtension = extensionOf(name)
         synchronized(lock) {
             write(rules().filterNot { it.action == action &&
-                ExternalDefaultRulePolicy.replaces(scope, key, normalized, sourceKey, it.scope, it.key, it.mime) } +
+                ExternalDefaultRulePolicy.replaces(
+                    scope, key, normalized, sourceKey, currentExtension, it.scope, it.key, it.mime,
+                ) } +
                 Rule(action, scope, key, normalized, name, component))
         }
     }
